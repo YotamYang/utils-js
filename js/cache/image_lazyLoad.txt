@@ -1,0 +1,46 @@
+(function($) {
+	$.fn.unveil = function(threshold, id, callback) {
+		var $w = $("#" + id),
+			th = threshold || 0,
+			retina = window.devicePixelRatio > 1,
+			attrib = retina? "data-src-retina" : "data-src",
+			images = this,
+			loaded;
+	
+		// 绑定unveil事件，加载图片
+		this.one("unveil", function() {
+			var source = this.getAttribute(attrib);	
+			source = source || this.getAttribute("data-src");
+			if (source) {
+				this.setAttribute("src", source);
+				if (typeof callback === "function") callback.call(this);
+			}
+		});
+	
+		function unveil() {
+			// 获取视域中的image
+			var inview = images.filter(function() {
+				var $e = $(this);
+				if ($e.is(":hidden")) return;
+		
+				var wt = $w.scrollTop(),
+					wb = wt + $w.height(),
+					et = $e.offset().top,
+					eb = et + $e.height();
+		
+				return eb >= wt - th && et <= wb + th;
+			});
+		
+			// 触发unveil事件
+			loaded = inview.trigger("unveil");
+			// 将已经加载的image从image对象数组中剔除
+			images = images.not(loaded);
+		}
+	
+		// 当窗口滚动的时候触发unveil方法
+		$w.on("scroll.unveil resize.unveil lookup.unveil", unveil);
+		unveil();
+	
+		return this;
+	};
+})(window.jQuery || window.Zepto);
